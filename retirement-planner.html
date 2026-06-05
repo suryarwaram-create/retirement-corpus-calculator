@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retirement Planner — Indian Investor Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0c0f0a;
+  --surface: #141810;
+  --card: #1a1f16;
+  --card2: #1f261a;
+  --border: #2a3025;
+  --border2: #3a4535;
+  --accent: #b5e853;
+  --accent-dim: #7aab2c;
+  --accent-glow: rgba(181,232,83,0.10);
+  --text: #e8eee2;
+  --text-muted: #8a9680;
+  --text-dim: #4a5445;
+  --danger: #e85353;
+  --warning: #e8a853;
+  --safe: #53e88e;
+  --gold: #f0c040;
+  --blue: #5ab4f0;
+  --fd: 'Syne', sans-serif;
+  --fm: 'DM Mono', monospace;
+  --r: 16px;
+  --rs: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--fd);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(181,232,83,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 100%, rgba(90,180,240,0.04) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; gap: 0;
+  height: 56px;
+}
+.progress-logo {
+  font-family: var(--fm); font-size: 12px; color: var(--accent);
+  letter-spacing: 0.15em; margin-right: 40px; white-space: nowrap;
+}
+.steps-track {
+  display: flex; align-items: center; gap: 0; flex: 1;
+}
+.step-item {
+  display: flex; align-items: center; gap: 0;
+}
+.step-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fm); font-size: 11px; color: var(--text-dim);
+  transition: all 0.3s; cursor: pointer; background: var(--card);
+  white-space: nowrap;
+}
+.step-dot.active {
+  border-color: var(--accent); color: var(--bg);
+  background: var(--accent); font-weight: 700;
+}
+.step-dot.done {
+  border-color: var(--accent-dim); color: var(--accent-dim);
+  background: rgba(181,232,83,0.08);
+}
+.step-line {
+  height: 1.5px; width: 60px; background: var(--border);
+  transition: background 0.3s;
+}
+.step-line.done { background: var(--accent-dim); }
+.step-label {
+  font-size: 10px; font-family: var(--fm); color: var(--text-dim);
+  letter-spacing: 0.08em; margin-left: 6px;
+  transition: color 0.3s; white-space: nowrap;
+}
+.step-label.active { color: var(--accent); }
+
+/* ── PAGES ── */
+.page {
+  position: relative; z-index: 1;
+  min-height: 100vh; padding-top: 80px;
+  display: none;
+}
+.page.active { display: block; }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+.wrap-sm { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
+
+/* ── TYPOGRAPHY ── */
+.eyebrow {
+  font-family: var(--fm); font-size: 11px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--accent); }
+h1 {
+  font-size: clamp(30px, 5vw, 52px); font-weight: 800;
+  line-height: 1.08; letter-spacing: -0.03em;
+}
+h1 span { color: var(--accent); }
+.subtitle {
+  margin-top: 12px; font-size: 15px; color: var(--text-muted);
+  line-height: 1.65; max-width: 520px;
+}
+
+/* ── CARD ── */
+.panel {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 28px;
+}
+.panel-title {
+  font-size: 10px; font-family: var(--fm); letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--text-dim); margin-bottom: 22px;
+}
+
+/* ── SLIDERS ── */
+.ig { margin-bottom: 26px; }
+.ig:last-child { margin-bottom: 0; }
+.il { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; }
+.in { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+.iv {
+  font-family: var(--fm); font-size: 17px; font-weight: 500;
+  color: var(--accent); letter-spacing: -0.02em;
+}
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 3px; background: var(--border);
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  background: var(--accent); border-radius: 50%; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2); box-shadow: 0 0 0 6px rgba(181,232,83,0.2);
+}
+.rb { display: flex; justify-content: space-between; margin-top: 4px; }
+.rb span { font-family: var(--fm); font-size: 10px; color: var(--text-dim); }
+.divider { height: 1px; background: var(--border); margin: 22px 0; }
+
+/* ── LAYOUT HELPERS ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media(max-width:700px) { .two-col, .three-col { grid-template-columns: 1fr; } }
+
+/* ── NAV BUTTONS ── */
+.nav-row {
+  display: flex; gap: 14px; margin-top: 32px; justify-content: flex-end;
+}
+.btn {
+  padding: 13px 28px; border-radius: 100px; font-family: var(--fd);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: none; transition: all 0.2s; letter-spacing: 0.01em;
+}
+.btn-primary {
+  background: var(--accent); color: var(--bg);
+}
+.btn-primary:hover { background: #caf070; transform: translateY(-1px); }
+.btn-secondary {
+  background: transparent; color: var(--text-muted);
+  border: 1px solid var(--border2);
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── CORPUS TARGET DISPLAY (page 1) ── */
+.target-box {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 24px 28px;
+  position: relative; overflow: hidden;
+}
+.target-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--accent);
+}
+.target-label { font-family: var(--fm); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+.target-amount { font-size: 48px; font-weight: 800; letter-spacing: -0.04em; color: var(--accent); line-height: 1; }
+.target-sub { font-size: 13px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+.target-tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 10px; font-family: var(--fm); background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(181,232,83,0.25); margin-top: 10px; }
+
+/* ── STAT BOXES ── */
+.stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+@media(max-width:600px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+.stat-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--rs); padding: 16px 18px; }
+.stat-label { font-family: var(--fm); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
+.stat-value { font-family: var(--fm); font-size: 15px; font-weight: 500; color: var(--text); }
+.stat-value.good { color: var(--safe); }
+.stat-value.warn { color: var(--warning); }
+.stat-value.bad  { color: var(--danger); }
+
+/* ── CHART ── */
+.chart-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 24px 28px; }
+.chart-title { font-size: 12px; font-family: var(--fm); color: var(--text-muted); margin-bottom: 16px; }
+.chart-wrap { position: relative; height: 200px; }
+
+/* ── PAGE 3: RISK CARDS ── */
+.risk-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-bottom: 28px; }
+@media(max-width:780px) { .risk-cards { grid-template-columns: 1fr; } }
+.risk-card {
+  background: var(--card); border: 2px solid var(--border);
+  border-radius: var(--r); padding: 24px 20px;
+  cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+}
+.risk-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--rc, var(--border)); transition: opacity 0.25s;
+}
+.risk-card:hover { border-color: var(--rc, var(--border2)); transform: translateY(-2px); }
+.risk-card.selected { border-color: var(--rc); background: var(--card2); }
+.risk-card[data-risk="conservative"] { --rc: #5ab4f0; }
+.risk-card[data-risk="moderate"]     { --rc: #b5e853; }
+.risk-card[data-risk="aggressive"]   { --rc: #e85353; }
+.risk-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.risk-tagline { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; font-family: var(--fm); }
+.risk-return { font-family: var(--fm); font-size: 24px; font-weight: 500; margin-bottom: 4px; }
+.risk-return span { font-size: 12px; color: var(--text-dim); }
+.risk-desc { font-size: 12px; color: var(--text-muted); line-height: 1.55; margin-top: 10px; }
+.risk-check {
+  position: absolute; top: 16px; right: 16px;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; transition: all 0.2s;
+}
+.risk-card.selected .risk-check { background: var(--rc); border-color: var(--rc); color: var(--bg); }
+
+/* ── ALLOCATION TABLE ── */
+.alloc-section { margin-top: 24px; }
+.alloc-title { font-size: 11px; font-family: var(--fm); letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 16px; }
+.alloc-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.alloc-row:last-child { border-bottom: none; }
+.alloc-icon { width: 36px; height: 36px; border-radius: var(--rs); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.alloc-name { flex: 1; }
+.alloc-name strong { font-size: 14px; font-weight: 600; display: block; }
+.alloc-name small { font-size: 11px; color: var(--text-muted); }
+.alloc-pct { font-family: var(--fm); font-size: 18px; font-weight: 500; min-width: 44px; text-align: right; }
+.alloc-bar-wrap { width: 100px; height: 5px; background: var(--border); border-radius: 3px; }
+.alloc-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.alloc-amount { font-family: var(--fm); font-size: 13px; color: var(--text-muted); min-width: 80px; text-align: right; }
+
+/* ── FUND RECOMMENDATIONS ── */
+.fund-section { margin-top: 28px; }
+.fund-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:600px) { .fund-grid { grid-template-columns: 1fr; } }
+.fund-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--rs); padding: 16px 18px;
+}
+.fund-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 100px;
+  font-size: 10px; font-family: var(--fm); margin-bottom: 8px;
+}
+.fund-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.fund-meta { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+.fund-returns { font-family: var(--fm); font-size: 12px; color: var(--safe); margin-top: 6px; }
+
+/* ── RESULT SUMMARY ── */
+.result-hero {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 28px 32px; margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.result-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--blue)); }
+.rh-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+@media(max-width:600px) { .rh-grid { grid-template-columns: 1fr 1fr; } }
+.rh-item {}
+.rh-label { font-family: var(--fm); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
+.rh-val { font-family: var(--fm); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+
+/* ── SIP TIMELINE ── */
+.sip-row {
+  display: flex; align-items: center; gap: 14px; padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sip-row:last-child { border-bottom: none; }
+.sip-year { font-family: var(--fm); font-size: 12px; color: var(--text-dim); min-width: 60px; }
+.sip-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; }
+.sip-bar { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.8s ease; }
+.sip-val { font-family: var(--fm); font-size: 12px; color: var(--text-muted); min-width: 80px; text-align: right; }
+.sip-milestone { font-size: 10px; color: var(--accent); margin-left: 6px; font-family: var(--fm); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.anim { animation: fadeUp 0.45s ease both; }
+.anim-1 { animation-delay: 0.05s; }
+.anim-2 { animation-delay: 0.10s; }
+.anim-3 { animation-delay: 0.15s; }
+.anim-4 { animation-delay: 0.20s; }
+
+/* ── PAGE 1 LAYOUT ── */
+.p1-layout { display: grid; grid-template-columns: 360px 1fr; gap: 22px; align-items: start; }
+@media(max-width:840px) { .p1-layout { grid-template-columns: 1fr; } }
+.p1-right { display: flex; flex-direction: column; gap: 18px; }
+
+/* ── DISCLAIMER ── */
+.disclaimer { margin-top: 40px; padding: 16px 20px; border: 1px solid var(--border); border-radius: var(--rs); font-size: 11px; color: var(--text-dim); line-height: 1.6; font-family: var(--fm); }
+</style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar">
+  <div class="progress-logo">₹ RETIRE SMART</div>
+  <div class="steps-track">
+    <div class="step-item">
+      <div class="step-dot active" id="dot-1" onclick="gotoPage(1)">1</div>
+      <span class="step-label active" id="lbl-1">Corpus goal</span>
+    </div>
+    <div class="step-line" id="line-1"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot-2" onclick="gotoPage(2)">2</div>
+      <span class="step-label" id="lbl-2">Your income</span>
+    </div>
+    <div class="step-line" id="line-2"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot-3" onclick="gotoPage(3)">3</div>
+      <span class="step-label" id="lbl-3">Your plan</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE 1 — CORPUS GOAL
+═══════════════════════════════════════════════ -->
+<div class="page active" id="page-1">
+<div class="wrap">
+
+  <header class="anim">
+    <div class="eyebrow">Step 1 of 3</div>
+    <h1>What lifestyle do you<br>want in <span>retirement?</span></h1>
+    <p class="subtitle">Define your monthly expenses and we'll calculate exactly how much corpus you need to build.</p>
+  </header>
+
+  <div class="p1-layout" style="margin-top:36px;">
+
+    <!-- LEFT: inputs -->
+    <div>
+      <div class="panel anim anim-1">
+        <div class="panel-title">// retirement lifestyle</div>
+
+        <div class="ig">
+          <div class="il"><span class="in">Monthly expenses in retirement</span><span class="iv" id="v-exp">₹1.00 L</span></div>
+          <input type="range" id="s-exp" min="20000" max="500000" step="5000" value="100000" oninput="p1Update()">
+          <div class="rb"><span>₹20K</span><span>₹5L</span></div>
+        </div>
+
+        <div class="ig">
+          <div class="il"><span class="in">Inflation rate</span><span class="iv" id="v-inf">6%</span></div>
+          <input type="range" id="s-inf" min="3" max="10" step="0.5" value="6" oninput="p1Update()">
+          <div class="rb"><span>3%</span><span>10%</span></div>
+        </div>
+
+        <div class="ig">
+          <div class="il"><span class="in">Expected portfolio return</span><span class="iv" id="v-ret">11%</span></div>
+          <input type="range" id="s-ret" min="6" max="16" step="0.5" value="11" oninput="p1Update()">
+          <div class="rb"><span>6%</span><span>16%</span></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="ig">
+          <div class="il"><span class="in">Monthly income (post-retirement)</span><span class="iv" id="v-inc">₹0</span></div>
+          <input type="range" id="s-inc" min="0" max="200000" step="5000" value="0" oninput="p1Update()">
+          <div class="rb"><span>₹0</span><span>₹2L</span></div>
+        </div>
+
+        <div class="ig">
+          <div class="il"><span class="in">Years in retirement</span><span class="iv" id="v-yrs">30 yrs</span></div>
+          <input type="range" id="s-yrs" min="10" max="50" step="1" value="30" oninput="p1Update()">
+          <div class="rb"><span>10 yrs</span><span>50 yrs</span></div>
+        </div>
+      </div>
+
+      <div class="nav-row" style="justify-content:flex-end;margin-top:18px;">
+        <button class="btn btn-primary" onclick="goTo2()">Set this as my goal →</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: live result -->
+    <div class="p1-right">
+
+      <div class="target-box anim anim-2">
+        <div class="target-label">// corpus you need to build</div>
+        <div class="target-amount" id="r-corpus">₹—</div>
+        <div class="target-sub" id="r-sub">Based on your lifestyle and retirement horizon</div>
+        <div class="target-tag" id="r-wr">Withdrawal rate: —%</div>
+      </div>
+
+      <div class="stat-grid anim anim-3">
+        <div class="stat-box">
+          <div class="stat-label">Monthly need</div>
+          <div class="stat-value" id="r-mneed">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Annual draw</div>
+          <div class="stat-value" id="r-adraw">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Real return</div>
+          <div class="stat-value" id="r-real">—</div>
+        </div>
+      </div>
+
+      <div class="chart-panel anim anim-4">
+        <div class="chart-title">// projected corpus depletion over retirement</div>
+        <div class="chart-wrap"><canvas id="chart1"></canvas></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE 2 — INCOME & SAVINGS
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-2">
+<div class="wrap-sm">
+
+  <header class="anim">
+    <div class="eyebrow">Step 2 of 3</div>
+    <h1>Let's understand your<br><span>financial position</span></h1>
+    <p class="subtitle">Your income, savings rate, and existing assets determine how quickly you can build the corpus.</p>
+  </header>
+
+  <div style="margin-top:32px; display:flex; flex-direction:column; gap:18px;">
+
+    <div class="panel anim anim-1">
+      <div class="panel-title">// your income today</div>
+
+      <div class="ig">
+        <div class="il"><span class="in">Monthly take-home salary</span><span class="iv" id="v-sal">₹1.00 L</span></div>
+        <input type="range" id="s-sal" min="30000" max="1000000" step="5000" value="100000" oninput="p2Update()">
+        <div class="rb"><span>₹30K</span><span>₹10L</span></div>
+      </div>
+
+      <div class="ig">
+        <div class="il"><span class="in">Annual salary hike</span><span class="iv" id="v-hike">8%</span></div>
+        <input type="range" id="s-hike" min="0" max="20" step="0.5" value="8" oninput="p2Update()">
+        <div class="rb"><span>0%</span><span>20%</span></div>
+      </div>
+
+      <div class="ig">
+        <div class="il"><span class="in">% of salary you can save/invest</span><span class="iv" id="v-save">30%</span></div>
+        <input type="range" id="s-save" min="5" max="70" step="1" value="30" oninput="p2Update()">
+        <div class="rb"><span>5%</span><span>70%</span></div>
+      </div>
+    </div>
+
+    <div class="panel anim anim-2">
+      <div class="panel-title">// existing assets (what you already have)</div>
+
+      <div class="two-col">
+        <div class="ig">
+          <div class="il"><span class="in">Savings / FD / Bank</span><span class="iv" id="v-a-bank">₹0</span></div>
+          <input type="range" id="s-a-bank" min="0" max="10000000" step="50000" value="0" oninput="p2Update()">
+          <div class="rb"><span>₹0</span><span>₹1 Cr</span></div>
+        </div>
+        <div class="ig">
+          <div class="il"><span class="in">Mutual funds / Stocks</span><span class="iv" id="v-a-mf">₹0</span></div>
+          <input type="range" id="s-a-mf" min="0" max="20000000" step="100000" value="0" oninput="p2Update()">
+          <div class="rb"><span>₹0</span><span>₹2 Cr</span></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="ig">
+          <div class="il"><span class="in">Gold / Jewellery</span><span class="iv" id="v-a-gold">₹0</span></div>
+          <input type="range" id="s-a-gold" min="0" max="5000000" step="50000" value="0" oninput="p2Update()">
+          <div class="rb"><span>₹0</span><span>₹50L</span></div>
+        </div>
+        <div class="ig">
+          <div class="il"><span class="in">EPF / PPF / NPS</span><span class="iv" id="v-a-epf">₹0</span></div>
+          <input type="range" id="s-a-epf" min="0" max="10000000" step="50000" value="0" oninput="p2Update()">
+          <div class="rb"><span>₹0</span><span>₹1 Cr</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel anim anim-3">
+      <div class="panel-title">// timeline</div>
+      <div class="ig">
+        <div class="il"><span class="in">Years until retirement</span><span class="iv" id="v-horizon">25 yrs</span></div>
+        <input type="range" id="s-horizon" min="5" max="40" step="1" value="25" oninput="p2Update()">
+        <div class="rb"><span>5 yrs</span><span>40 yrs</span></div>
+      </div>
+    </div>
+
+    <!-- Live summary -->
+    <div class="result-hero anim anim-4" id="p2-summary">
+      <div class="rh-grid">
+        <div class="rh-item">
+          <div class="rh-label">Monthly SIP needed</div>
+          <div class="rh-val" id="r2-sip" style="color:var(--accent)">—</div>
+        </div>
+        <div class="rh-item">
+          <div class="rh-label">Your monthly savings</div>
+          <div class="rh-val" id="r2-savings">—</div>
+        </div>
+        <div class="rh-item">
+          <div class="rh-label">Gap / surplus</div>
+          <div class="rh-val" id="r2-gap">—</div>
+        </div>
+        <div class="rh-item">
+          <div class="rh-label">Existing corpus</div>
+          <div class="rh-val" id="r2-exist">—</div>
+        </div>
+        <div class="rh-item">
+          <div class="rh-label">Projected at retirement</div>
+          <div class="rh-val" id="r2-proj" style="color:var(--safe)">—</div>
+        </div>
+        <div class="rh-item">
+          <div class="rh-label">Target corpus</div>
+          <div class="rh-val" id="r2-target">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-secondary" onclick="gotoPage(1)">← Back</button>
+    <button class="btn btn-primary" onclick="goTo3()">See my investment plan →</button>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE 3 — INVESTMENT PLAN
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-3">
+<div class="wrap">
+
+  <header class="anim">
+    <div class="eyebrow">Step 3 of 3</div>
+    <h1>Your personalised<br><span>investment plan</span></h1>
+    <p class="subtitle">Choose your risk appetite. We'll tell you exactly where to invest, how much, and which instruments.</p>
+  </header>
+
+  <div style="margin-top:32px;">
+
+    <!-- Risk selector -->
+    <div class="risk-cards anim anim-1">
+      <div class="risk-card" data-risk="conservative" onclick="selectRisk('conservative')">
+        <div class="risk-check" id="chk-conservative"></div>
+        <div class="risk-name" style="color:#5ab4f0">Conservative</div>
+        <div class="risk-tagline">Low risk · Steady growth</div>
+        <div class="risk-return">9–10%<span> /yr est.</span></div>
+        <div class="risk-desc">Ideal for those 10–15 years from retirement or who can't stomach market swings. Capital preservation first.</div>
+      </div>
+      <div class="risk-card selected" data-risk="moderate" onclick="selectRisk('moderate')">
+        <div class="risk-check" id="chk-moderate">✓</div>
+        <div class="risk-name" style="color:#b5e853">Moderate</div>
+        <div class="risk-tagline">Balanced · Recommended</div>
+        <div class="risk-return">11–13%<span> /yr est.</span></div>
+        <div class="risk-desc">The sweet spot for most Indian investors. Equity-led growth with gold and debt as cushion.</div>
+      </div>
+      <div class="risk-card" data-risk="aggressive" onclick="selectRisk('aggressive')">
+        <div class="risk-check" id="chk-aggressive"></div>
+        <div class="risk-name" style="color:#e85353">Aggressive</div>
+        <div class="risk-tagline">High risk · High reward</div>
+        <div class="risk-return">13–15%<span> /yr est.</span></div>
+        <div class="risk-desc">For younger investors (20+ years to retirement) who can ride out market volatility for maximum compounding.</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start;">
+    <div>
+
+    <!-- Allocation -->
+    <div class="panel anim anim-2">
+      <div class="alloc-title">Asset allocation</div>
+      <div id="alloc-rows"></div>
+    </div>
+
+    <div class="panel anim anim-3" style="margin-top:18px;">
+      <div class="alloc-title">Monthly SIP breakdown</div>
+      <div id="sip-breakdown"></div>
+    </div>
+
+    </div>
+    <div>
+
+    <!-- Corpus build chart -->
+    <div class="chart-panel anim anim-2">
+      <div class="chart-title">// corpus growth projection</div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chart3"></canvas></div>
+    </div>
+
+    <!-- Fund recommendations -->
+    <div class="fund-section anim anim-3">
+      <div class="alloc-title" style="margin-bottom:14px">Recommended instruments</div>
+      <div class="fund-grid" id="fund-grid"></div>
+    </div>
+
+    </div>
+    </div>
+
+    <!-- Yearly milestone table -->
+    <div class="panel anim anim-4" style="margin-top:22px;">
+      <div class="alloc-title">Wealth building milestones</div>
+      <div id="milestone-rows"></div>
+    </div>
+
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-secondary" onclick="gotoPage(2)">← Back</button>
+    <button class="btn btn-primary" onclick="window.print()">📄 Save as PDF</button>
+  </div>
+
+  <div class="disclaimer">
+    ⚠ Projections assume constant returns. Actual returns vary. MF names are illustrative; check SEBI registrations, exit loads, and taxation before investing. This is not SEBI-registered financial advice. Consult a certified financial planner for personalised guidance.
+  </div>
+
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// GLOBAL STATE
+// ══════════════════════════════════════════════
+const S = {
+  // Page 1
+  exp: 100000, inf: 6, ret: 11, inc: 0, yrs: 30,
+  // Derived
+  targetCorpus: 0,
+  // Page 2
+  sal: 100000, hike: 8, save: 30,
+  aBank: 0, aMf: 0, aGold: 0, aEpf: 0,
+  horizon: 25,
+  // Page 3
+  risk: 'moderate'
+};
+
+// ══════════════════════════════════════════════
+// FORMAT HELPERS
+// ══════════════════════════════════════════════
+function fr(n) {
+  if (isNaN(n) || n === null) return '—';
+  const abs = Math.abs(n);
+  let s = '';
+  if (abs >= 1e7)      s = (abs/1e7).toFixed(2).replace(/\.?0+$/,'') + ' Cr';
+  else if (abs >= 1e5) s = (abs/1e5).toFixed(2).replace(/\.?0+$/,'') + ' L';
+  else if (abs >= 1e3) s = (abs/1e3).toFixed(1).replace(/\.?0+$/,'') + 'K';
+  else                 s = Math.round(abs).toLocaleString('en-IN');
+  return (n < 0 ? '-₹' : '₹') + s;
+}
+function fp(n, d=1) { return (n >= 0 ? '' : '') + n.toFixed(d) + '%'; }
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+let currentPage = 1;
+function gotoPage(n) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + n).classList.add('active');
+  window.scrollTo(0, 0);
+  currentPage = n;
+  updateProgress(n);
+}
+function updateProgress(n) {
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById('dot-' + i);
+    const lbl = document.getElementById('lbl-' + i);
+    dot.className = 'step-dot' + (i === n ? ' active' : i < n ? ' done' : '');
+    lbl.className = 'step-label' + (i === n ? ' active' : '');
+  });
+  [1,2].forEach(i => {
+    const line = document.getElementById('line-' + i);
+    if (line) line.className = 'step-line' + (i < n ? ' done' : '');
+  });
+}
+function goTo2() { p2Update(); gotoPage(2); }
+function goTo3() { buildPlan(); gotoPage(3); }
+
+// ══════════════════════════════════════════════
+// PAGE 1 — CORPUS CALCULATION
+// ══════════════════════════════════════════════
+let chart1Instance = null;
+function p1Update() {
+  S.exp   = +document.getElementById('s-exp').value;
+  S.inf   = +document.getElementById('s-inf').value;
+  S.ret   = +document.getElementById('s-ret').value;
+  S.inc   = +document.getElementById('s-inc').value;
+  S.yrs   = +document.getElementById('s-yrs').value;
+
+  document.getElementById('v-exp').textContent = fr(S.exp);
+  document.getElementById('v-inf').textContent = fp(S.inf);
+  document.getElementById('v-ret').textContent = fp(S.ret);
+  document.getElementById('v-inc').textContent = S.inc > 0 ? fr(S.inc) : '₹0';
+  document.getElementById('v-yrs').textContent = S.yrs + ' yrs';
+
+  const r = S.ret / 100;
+  const inf = S.inf / 100;
+  const net = S.exp - S.inc; // monthly net draw
+  const annualNet = net * 12;
+
+  // Required corpus: PV of inflation-adjusted annuity
+  // Using safe-withdrawal-rate method adapted for India
+  // Corpus = annualNet / withdrawal_rate where WR accounts for real return
+  // More precise: PV of growing annuity
+  const realR = (1 + r) / (1 + inf) - 1;
+  let corpus;
+  if (Math.abs(realR) < 0.0001) {
+    corpus = annualNet * S.yrs;
+  } else {
+    corpus = annualNet * (1 - Math.pow(1 + realR, -S.yrs)) / realR;
+  }
+  S.targetCorpus = Math.max(0, corpus);
+  const wr = (annualNet / corpus * 100);
+
+  document.getElementById('r-corpus').textContent = fr(corpus);
+  document.getElementById('r-wr').textContent = 'Withdrawal rate: ' + (isFinite(wr) ? wr.toFixed(1) + '%' : '—');
+  document.getElementById('r-mneed').textContent = fr(net);
+  document.getElementById('r-adraw').textContent = fr(annualNet);
+  document.getElementById('r-real').textContent = fp(realR * 100);
+
+  // Simulate depletion
+  const labels = [], balances = [];
+  let bal = corpus, exp = annualNet;
+  for (let y = 0; y <= S.yrs; y++) {
+    labels.push('Yr ' + y);
+    balances.push(Math.max(0, bal));
+    bal = bal * (1 + r) - exp;
+    exp *= (1 + inf);
+  }
+
+  if (!chart1Instance) {
+    chart1Instance = new Chart(document.getElementById('chart1').getContext('2d'), {
+      type: 'line',
+      data: { labels, datasets: [{ data: balances, borderColor: '#b5e853', backgroundColor: 'rgba(181,232,83,0.08)', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true }] },
+      options: chartOpts(fr)
+    });
+  } else {
+    chart1Instance.data.labels = labels;
+    chart1Instance.data.datasets[0].data = balances;
+    chart1Instance.update();
+  }
+}
+
+function chartOpts(fmt) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 400 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1a1f16', borderColor: '#2a3025', borderWidth: 1,
+        titleColor: '#8a9680', bodyColor: '#e8eee2',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont: { family: "'DM Mono', monospace", size: 13 },
+        padding: 12,
+        callbacks: { title: i => i[0].label, label: i => '  ' + fmt(i.raw) }
+      }
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#4a5445', font: { family: "'DM Mono', monospace", size: 10 }, maxTicksLimit: 8 }, border: { color: '#2a3025' } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#4a5445', font: { family: "'DM Mono', monospace", size: 10 }, callback: v => fr(v), maxTicksLimit: 5 }, border: { color: '#2a3025' }, min: 0 }
+    }
+  };
+}
+
+// ══════════════════════════════════════════════
+// PAGE 2 — INCOME & SAVINGS
+// ══════════════════════════════════════════════
+function p2Update() {
+  S.sal     = +document.getElementById('s-sal').value;
+  S.hike    = +document.getElementById('s-hike').value;
+  S.save    = +document.getElementById('s-save').value;
+  S.aBank   = +document.getElementById('s-a-bank').value;
+  S.aMf     = +document.getElementById('s-a-mf').value;
+  S.aGold   = +document.getElementById('s-a-gold').value;
+  S.aEpf    = +document.getElementById('s-a-epf').value;
+  S.horizon = +document.getElementById('s-horizon').value;
+
+  document.getElementById('v-sal').textContent    = fr(S.sal);
+  document.getElementById('v-hike').textContent   = fp(S.hike);
+  document.getElementById('v-save').textContent   = S.save + '%';
+  document.getElementById('v-a-bank').textContent = fr(S.aBank);
+  document.getElementById('v-a-mf').textContent   = fr(S.aMf);
+  document.getElementById('v-a-gold').textContent = fr(S.aGold);
+  document.getElementById('v-a-epf').textContent  = fr(S.aEpf);
+  document.getElementById('v-horizon').textContent= S.horizon + ' yrs';
+
+  const existingCorpus = S.aBank + S.aMf + S.aGold + S.aEpf;
+  const monthlySavings = S.sal * S.save / 100;
+  const r = S.ret / 100;
+  const n = S.horizon;
+
+  // Future value of existing corpus
+  const fvExisting = existingCorpus * Math.pow(1 + r, n);
+  // Remaining corpus needed from SIPs
+  const remaining = Math.max(0, S.targetCorpus - fvExisting);
+  // Monthly SIP needed (growing annuity) — approximate: use flat rate
+  // FV of SIP = P * ((1+r/12)^(n*12) - 1) / (r/12)
+  const rm = r / 12;
+  const nm = n * 12;
+  const fvFactor = (Math.pow(1 + rm, nm) - 1) / rm;
+  const sipNeeded = remaining / fvFactor;
+
+  // Projected total from savings
+  // Assume salary grows at hike%, savings% stays constant — simplify to average SIP
+  const avgSalary = S.sal * (Math.pow(1 + S.hike/100, n/2));
+  const avgSIP = avgSalary * S.save / 100;
+  const projFromSIP = avgSIP * fvFactor;
+  const projTotal = fvExisting + projFromSIP;
+
+  const gap = monthlySavings - sipNeeded;
+
+  document.getElementById('r2-sip').textContent     = fr(sipNeeded);
+  document.getElementById('r2-savings').textContent = fr(monthlySavings);
+  document.getElementById('r2-gap').textContent     = fr(gap);
+  document.getElementById('r2-gap').className       = 'rh-val ' + (gap >= 0 ? '' : 'style="color:var(--danger)"');
+  document.getElementById('r2-gap').style.color     = gap >= 0 ? 'var(--safe)' : 'var(--danger)';
+  document.getElementById('r2-exist').textContent   = fr(existingCorpus);
+  document.getElementById('r2-proj').textContent    = fr(projTotal);
+  document.getElementById('r2-target').textContent  = fr(S.targetCorpus);
+}
+
+// ══════════════════════════════════════════════
+// PAGE 3 — INVESTMENT PLAN
+// ══════════════════════════════════════════════
+const PROFILES = {
+  conservative: {
+    return: 9.5, color: '#5ab4f0',
+    alloc: [
+      { name: 'Debt Mutual Funds', sub: 'Short-term & liquid funds', icon: '📋', pct: 40, color: '#5ab4f0' },
+      { name: 'Large-cap Equity MF', sub: 'Nifty 50 index funds',    icon: '📈', pct: 25, color: '#7ecdf5' },
+      { name: 'Gold',               sub: 'Sovereign Gold Bonds / ETF', icon: '🥇', pct: 20, color: '#f0c040' },
+      { name: 'PPF / EPF',          sub: 'Tax-free guaranteed return', icon: '🏛️', pct: 10, color: '#8a9680' },
+      { name: 'FD / RD',            sub: 'FDIC-insured bank deposits', icon: '🏦', pct: 5,  color: '#6ab4a0' },
+    ],
+    funds: [
+      { name: 'HDFC Short Term Debt Fund',  badge: 'Debt', badgeColor: '#5ab4f0', meta: 'Low risk · 1–3 yr horizon', returns: '7–8% p.a.' },
+      { name: 'UTI Nifty 50 Index Fund',    badge: 'Equity', badgeColor: '#b5e853', meta: 'Large cap · Passive', returns: '11–12% CAGR' },
+      { name: 'Sovereign Gold Bond (SGB)',  badge: 'Gold', badgeColor: '#f0c040', meta: 'RBI-issued · 2.5% extra interest', returns: '10–12% incl. gold gain' },
+      { name: 'PPF (Public Provident Fund)', badge: 'Tax-free', badgeColor: '#8a9680', meta: 'Sovereign guarantee · EEE status', returns: '7.1% tax-free' },
+    ]
+  },
+  moderate: {
+    return: 12, color: '#b5e853',
+    alloc: [
+      { name: 'Flexi-cap Equity MF', sub: 'Diversified across market caps',  icon: '📈', pct: 40, color: '#b5e853' },
+      { name: 'Mid-cap Equity MF',   sub: 'Higher growth potential',           icon: '🚀', pct: 20, color: '#caf070' },
+      { name: 'Gold (SGB / ETF)',     sub: 'Hedge against inflation',          icon: '🥇', pct: 15, color: '#f0c040' },
+      { name: 'Debt / Hybrid MF',    sub: 'Stability layer',                  icon: '📋', pct: 15, color: '#5ab4f0' },
+      { name: 'Real Estate (REITs)', sub: 'Passive real estate exposure',     icon: '🏠', pct: 10, color: '#e8a853' },
+    ],
+    funds: [
+      { name: 'Parag Parikh Flexi Cap Fund', badge: 'Flexi-cap', badgeColor: '#b5e853', meta: 'Global diversification · David Gokhale', returns: '16% CAGR (5yr)' },
+      { name: 'Mirae Asset Mid Cap Fund',    badge: 'Mid-cap', badgeColor: '#caf070', meta: 'Consistent performer · Growth focused', returns: '18% CAGR (5yr)' },
+      { name: 'Sovereign Gold Bond (SGB)',   badge: 'Gold', badgeColor: '#f0c040', meta: 'RBI-issued · 2.5% extra interest', returns: '10–12% incl. gold gain' },
+      { name: 'Embassy Office Parks REIT',   badge: 'REIT', badgeColor: '#e8a853', meta: 'Listed RE exposure · 6% distribution yield', returns: '8–10% total return' },
+    ]
+  },
+  aggressive: {
+    return: 14, color: '#e85353',
+    alloc: [
+      { name: 'Small-cap Equity MF', sub: 'High growth · High volatility',    icon: '🚀', pct: 30, color: '#e85353' },
+      { name: 'Mid-cap Equity MF',   sub: 'Growth compounders',               icon: '📈', pct: 30, color: '#f07070' },
+      { name: 'International MF',    sub: 'US & global exposure',             icon: '🌐', pct: 15, color: '#b5e853' },
+      { name: 'Gold (SGB)',          sub: 'Inflation hedge · 10–15%',        icon: '🥇', pct: 10, color: '#f0c040' },
+      { name: 'Direct Equity',       sub: 'Individual stocks · Sector picks', icon: '💹', pct: 15, color: '#e8a853' },
+    ],
+    funds: [
+      { name: 'Nippon India Small Cap Fund',  badge: 'Small-cap', badgeColor: '#e85353', meta: 'Largest small-cap fund · AUM ₹50K Cr+', returns: '25% CAGR (5yr)' },
+      { name: 'HDFC Mid-Cap Opportunities',   badge: 'Mid-cap', badgeColor: '#f07070', meta: 'Consistent 15yr performer', returns: '19% CAGR (5yr)' },
+      { name: 'Mirae Asset NYSE FANG+ ETF',   badge: 'International', badgeColor: '#b5e853', meta: 'US tech exposure via ETF', returns: '20%+ CAGR (USD)' },
+      { name: 'Nifty Next 50 Index Fund',     badge: 'Index', badgeColor: '#8a9680', meta: 'Future large-caps · Low cost', returns: '13% CAGR (5yr)' },
+    ]
+  }
+};
+
+let chart3Instance = null;
+function selectRisk(risk) {
+  S.risk = risk;
+  document.querySelectorAll('.risk-card').forEach(c => {
+    const isSelected = c.dataset.risk === risk;
+    c.classList.toggle('selected', isSelected);
+    document.getElementById('chk-' + c.dataset.risk).textContent = isSelected ? '✓' : '';
+  });
+  buildPlan();
+}
+
+function buildPlan() {
+  const profile = PROFILES[S.risk];
+  const r = profile.return / 100;
+  const rm = r / 12;
+  const n = S.horizon;
+  const nm = n * 12;
+  const existingCorpus = S.aBank + S.aMf + S.aGold + S.aEpf;
+  const fvFactor = (Math.pow(1 + rm, nm) - 1) / rm;
+  const fvExisting = existingCorpus * Math.pow(1 + r, n);
+  const remaining = Math.max(0, S.targetCorpus - fvExisting);
+  const sipNeeded = remaining / fvFactor;
+  const monthlySavings = S.sal * S.save / 100;
+
+  // ALLOCATION ROWS
+  const allocHtml = profile.alloc.map(a => {
+    const amount = sipNeeded * a.pct / 100;
+    return `<div class="alloc-row">
+      <div class="alloc-icon" style="background:${a.color}22">${a.icon}</div>
+      <div class="alloc-name"><strong>${a.name}</strong><small>${a.sub}</small></div>
+      <div class="alloc-bar-wrap"><div class="alloc-bar" style="width:${a.pct}%;background:${a.color}"></div></div>
+      <div class="alloc-pct" style="color:${a.color}">${a.pct}%</div>
+      <div class="alloc-amount">${fr(amount)}/mo</div>
+    </div>`;
+  }).join('');
+  document.getElementById('alloc-rows').innerHTML = allocHtml;
+
+  // SIP BREAKDOWN by category
+  const sipRows = profile.alloc.map(a => {
+    const amount = sipNeeded * a.pct / 100;
+    const barW = Math.min(100, (amount / sipNeeded) * 100);
+    return `<div class="sip-row">
+      <div class="sip-year" style="color:${a.color}">${a.pct}%</div>
+      <div class="sip-bar-wrap"><div class="sip-bar" style="width:${barW}%;background:${a.color}"></div></div>
+      <div class="sip-val">${fr(amount)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('sip-breakdown').innerHTML = sipRows;
+
+  // FUND CARDS
+  const fundHtml = profile.funds.map(f => `
+    <div class="fund-card">
+      <div class="fund-badge" style="background:${f.badgeColor}22;color:${f.badgeColor}">${f.badge}</div>
+      <div class="fund-name">${f.name}</div>
+      <div class="fund-meta">${f.meta}</div>
+      <div class="fund-returns">Historical: ${f.returns}</div>
+    </div>`).join('');
+  document.getElementById('fund-grid').innerHTML = fundHtml;
+
+  // MILESTONE TABLE
+  const milestones = [];
+  let bal = existingCorpus;
+  let sip = sipNeeded;
+  const milestoneAmounts = [1e6, 2.5e6, 5e6, 1e7, 2e7, 5e7, 1e8];
+  let mIdx = 0;
+  const maxBal = S.targetCorpus;
+  for (let y = 1; y <= n; y++) {
+    bal = bal * (1 + r) + sip * 12;
+    sip *= (1 + S.hike/100);
+    const pct = Math.min(100, (bal / maxBal) * 100);
+    let milestone = '';
+    while (mIdx < milestoneAmounts.length && bal >= milestoneAmounts[mIdx]) {
+      milestone = '🏆 ' + fr(milestoneAmounts[mIdx]) + ' crossed!';
+      mIdx++;
+    }
+    if (y % 5 === 0 || y === 1 || y === n || milestone) {
+      milestones.push({ y, bal, pct, milestone });
+    }
+  }
+  const msHtml = milestones.map(m => `
+    <div class="sip-row">
+      <div class="sip-year">Year ${m.y}</div>
+      <div class="sip-bar-wrap"><div class="sip-bar" style="width:${m.pct}%"></div></div>
+      <div class="sip-val">${fr(m.bal)}</div>
+      <div class="sip-milestone">${m.milestone}</div>
+    </div>`).join('');
+  document.getElementById('milestone-rows').innerHTML = msHtml;
+
+  // CHART — corpus growth over time
+  const cLabels = [], cData = [], cSipData = [];
+  let cBal = existingCorpus, cSip = sipNeeded;
+  cLabels.push('Now'); cData.push(cBal); cSipData.push(cBal);
+  for (let y = 1; y <= n; y++) {
+    cBal = cBal * (1 + r) + cSip * 12;
+    cSip *= (1 + S.hike/100);
+    if (y % Math.max(1, Math.floor(n/15)) === 0 || y === n) {
+      cLabels.push('Yr ' + y);
+      cData.push(cBal);
+      cSipData.push(cSip * 12);
+    }
+  }
+
+  const targetLine = Array(cLabels.length).fill(S.targetCorpus);
+
+  if (!chart3Instance) {
+    chart3Instance = new Chart(document.getElementById('chart3').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: cLabels,
+        datasets: [
+          { label: 'Projected corpus', data: cData, borderColor: profile.color, backgroundColor: profile.color + '14', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true },
+          { label: 'Target', data: targetLine, borderColor: '#4a5445', borderDash: [6,4], borderWidth: 1.5, pointRadius: 0, fill: false }
+        ]
+      },
+      options: chartOpts(fr)
+    });
+  } else {
+    chart3Instance.data.labels = cLabels;
+    chart3Instance.data.datasets[0].data = cData;
+    chart3Instance.data.datasets[0].borderColor = profile.color;
+    chart3Instance.data.datasets[0].backgroundColor = profile.color + '14';
+    chart3Instance.data.datasets[1].data = targetLine;
+    chart3Instance.update();
+  }
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+p1Update();
+p2Update();
+</script>
+</body>
+</html>
